@@ -6,18 +6,21 @@ import numpy as np
 
 
 adaface_models = {
-    'ir_50':"pretrained/adaface_ir50_ms1mv2.ckpt",
+    'ir_18': "/remote/idiap.svm/temp.biometric01/prahimi/exps/proj/pretrained_models/adaface_ir18_webface4m.ckpt",
+    'ir_50': "/remote/idiap.svm/temp.biometric01/prahimi/exps/proj/pretrained_models/adaface_ir50_webface4m.ckpt",
+    'ir_101': "/remote/idiap.svm/temp.biometric01/prahimi/exps/proj/pretrained_models/adaface_ir101_webface12m.ckpt"
 }
 
 def load_pretrained_model(architecture='ir_50'):
     # load model and pretrained statedict
     assert architecture in adaface_models.keys()
     model = net.build_model(architecture)
+    weights_path = adaface_models[architecture]
     statedict = torch.load(adaface_models[architecture])['state_dict']
     model_statedict = {key[6:]:val for key, val in statedict.items() if key.startswith('model.')}
     model.load_state_dict(model_statedict)
     model.eval()
-    return model
+    return model, weights_path.split('/')[-1].split('.')[0]
 
 def to_input(pil_rgb_image):
     np_img = np.array(pil_rgb_image)

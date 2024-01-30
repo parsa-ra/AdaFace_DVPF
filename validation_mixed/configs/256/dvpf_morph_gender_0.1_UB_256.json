@@ -1,0 +1,10 @@
+{
+        "dataset_name": "morph",
+        "sensitive_attribute_name": "gender",
+        "alpha": "0.1",
+        "PF": "UB",
+        "z_dim": "256",
+        "backbone": "adaface_ir50",
+        "backbone_trained_dataset": "webface4m"
+    
+}

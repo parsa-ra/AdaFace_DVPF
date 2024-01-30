@@ -17,7 +17,7 @@ def add_padding(pil_img, top, right, bottom, left, color=(0,0,0)):
     result.paste(pil_img, (left, top))
     return result
 
-def get_aligned_face(image_path, rgb_pil_image=None):
+def get_aligned_face(image_path=None, rgb_pil_image=None):
     if rgb_pil_image is None:
         img = Image.open(image_path).convert('RGB')
     else:

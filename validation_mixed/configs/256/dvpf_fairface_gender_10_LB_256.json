@@ -1,0 +1,10 @@
+{
+        "dataset_name": "fairface",
+        "sensitive_attribute_name": "gender",
+        "alpha": "10",
+        "PF": "LB",
+        "z_dim": "256",
+        "backbone": "adaface_ir50",
+        "backbone_trained_dataset": "webface4m"
+    
+}

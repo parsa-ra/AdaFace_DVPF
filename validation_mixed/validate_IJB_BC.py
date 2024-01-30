@@ -5,6 +5,8 @@ matplotlib.use('Agg')
 import sys, os
 sys.path.insert(0, os.path.dirname(os.getcwd()))
 import net
+import os
+import torch.nn as nn 
 
 from validation_mixed.insightface_ijb_helper.dataloader import prepare_dataloader
 from validation_mixed.insightface_ijb_helper import eval_helper_identification
@@ -16,6 +18,9 @@ import torch
 from tqdm import tqdm
 import pandas as pd
 
+from omegaconf import OmegaConf
+
+attention = "##########\n"*3
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -205,17 +210,55 @@ def verification(data_root, dataset_name, img_input_feats, save_path):
     eval_helper_verification.write_result(result_files, save_path, dataset_name, label)
     os.remove(score_save_file)
 
-def load_pretrained_model(model_name='ir50'):
-    # load model and pretrained statedict
-    ckpt_path = adaface_models[model_name][0]
-    arch = adaface_models[model_name][1]
 
-    model = net.build_model(arch)
-    statedict = torch.load(ckpt_path)['state_dict']
-    model_statedict = {key[6:]:val for key, val in statedict.items() if key.startswith('model.')}
-    model.load_state_dict(model_statedict)
-    model.eval()
-    return model
+def load_pretrained_model(model_name='ir50', dvpf_kwargs={}):
+
+    model_type = model_name.split('_')[0]
+    if model_type == "ada":
+        print(attention, "AdaFace model")
+        # load model and pretrained statedict
+        ckpt_path = model_names[model_name][0]
+        arch = model_names[model_name][1]
+
+        model = net.build_model(arch)
+        statedict = torch.load(ckpt_path)['state_dict']
+        model_statedict = {key[6:]:val for key, val in statedict.items() if key.startswith('model.')}
+        model.load_state_dict(model_statedict)
+        model.eval()
+
+
+        # DVPF Stuff
+        if len(dvpf_kwargs.keys()) != 0:
+            print("Initializing DVPF model ... ")
+            
+            class DVPFCombine(nn.Module):
+                def __init__(self, backbone, dvpf_model): 
+                    super().__init__()
+                    self.backbone = backbone 
+                    self.dvpf_model = dvpf_model 
+
+                def forward(self, x): 
+                    output, faceness = self.backbone(x)
+                    output = self.dvpf_model(output)
+                    return (output, faceness)
+
+            import sys 
+            sys.path.append("/remote/idiap.svm/temp.biometric01/prahimi/exps/proj")
+            # Populate from settings 
+            from dvpf import get_model
+            dvpf_model = get_model(dvpf_kwargs)
+
+            model = DVPFCombine(
+                backbone=model, dvpf_model=dvpf_model
+            )
+            model.eval()
+            model.cuda()
+
+
+        return model
+    
+
+
 
 if __name__ == '__main__':
 
@@ -229,7 +272,15 @@ if __name__ == '__main__':
     parser.add_argument('--fusion_method', type=str, default='pre_norm_vector_add', choices=('average',
                                            'norm_weighted_avg', 'pre_norm_vector_add', 'concat'))
     parser.add_argument('--use_flip_test', type=str2bool, default='True')
+    parser.add_argument('--models_config', type=str, default="./model.yaml")
+
+    parser.add_argument('--dvpf_enable', action="store_true")
+    parser.add_argument('--dvpf_kwargs_path', type=str, default="./dvpf_config.json")
+
     args = parser.parse_args()
+
+    model_names = OmegaConf.load(args.models_config)
+    print(OmegaConf.to_yaml(model_names))
 
     dataset_name = args.dataset_name
     assert dataset_name in ['IJBC', 'IJBB']
@@ -237,25 +288,44 @@ if __name__ == '__main__':
     print('use_flip_test', args.use_flip_test)
     print('fusion_method', args.fusion_method)
 
-    adaface_models = {
-        'ir18_casia': ["../pretrained/adaface_ir18_casia.ckpt", 'ir_18'],
-        'ir18_webface4m': ["../pretrained/adaface_ir18_webface4m.ckpt", 'ir_18'],
-        'ir18_vgg2': ["../pretrained/adaface_ir18_vgg2.ckpt", 'ir_18'],
-        'ir50_casia': ["../pretrained/adaface_ir50_casia.ckpt", 'ir_50'],
-        'ir50_webface4m': ["../pretrained/adaface_ir50_webface4m.ckpt", 'ir_50'],
-        'ir50_ms1mv2': ["../pretrained/adaface_ir50_ms1mv2.ckpt", 'ir_50'],
-        'ir101_ms1mv2': ["../pretrained/adaface_ir101_ms1mv2.ckpt", 'ir_101'],
-        'ir101_ms1mv3': ["../pretrained/adaface_ir101_ms1mv3.ckpt", 'ir_101'],
-        'ir101_webface4m': ["../pretrained/adaface_ir101_webface4m.ckpt", 'ir_101'],
-        'ir101_webface12m': ["../pretrained/adaface_ir101_webface12m.ckpt", 'ir_101'],
-    }
-    assert args.model_name in adaface_models
-    save_path = './result/{}/{}'.format(args.dataset_name, args.model_name)
+
+    model_name = args.model_name
+
+    #### DVPF Stuff 
+    import json 
+    if args.dvpf_enable: 
+        print(args.dvpf_kwargs_path)
+        with open(args.dvpf_kwargs_path, 'r') as file:
+            dvpf_kwargs = json.load(file)
+        model_name += "_dvpf"
+
+    else: 
+        dvpf_kwargs = dict()
+    
+    ###############
+
+    assert args.model_name in model_names
+    save_path = './result/{}/{}'.format(args.dataset_name, model_name)
     print('result save_path', save_path)
     os.makedirs(save_path, exist_ok=True)
 
+    
+    if args.dvpf_enable:
+        import datetime
+        config_str = ""
+        for key in ["dataset_name", "sensitive_attribute_name", "alpha", "PF", "z_dim"]:
+            config_str += str(dvpf_kwargs[key]) + "_"
+
+        print(f"Config string set to {config_str}") 
+        save_path = os.path.join(save_path, 'dvpf', config_str)
+        os.makedirs(save_path, exist_ok=True)
+        with open(os.path.join(save_path, "dvpf_config.json"), 'w') as file:
+            import json 
+            json.dump(dvpf_kwargs, file)        
+
+
     # load model
-    model = load_pretrained_model(args.model_name)
+    model = load_pretrained_model(args.model_name, dvpf_kwargs)
     model.to('cuda:{}'.format(args.gpu))
 
     # get features and fuse

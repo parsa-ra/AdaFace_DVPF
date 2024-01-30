@@ -1,0 +1,9 @@
+{
+    "dataset_name": "morph",
+    "sensitive_attribute_name": "race",
+    "alpha": 0.0001,
+    "PF": "UB",
+    "z_dim": 256,
+    "backbone": "arcface_r50",
+    "backbone_trained_dataset": "MS1M-RetinaFace"
+}

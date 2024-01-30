@@ -1,0 +1,9 @@
+{
+    "dataset_name": "morph",
+    "sensitive_attribute_name": "race",
+    "alpha": 0.01,
+    "PF": "LB",
+    "z_dim": 256,
+    "backbone": "adaface_ir50",
+    "backbone_trained_dataset": "webface4m"
+}
