@@ -1,11 +1,11 @@
 ada_ir101_webface12m: 
-  - "/idiap/temp/prahimi/exps/proj/pretrained_models/adaface_ir101_webface12m.ckpt"
+  - "/path/to/pretrained_models/adaface_ir101_webface12m.ckpt"
   - "ir_101"
 
 ada_ir101_ms1mv3: 
-  - "/idiap/temp/prahimi/exps/proj/pretrained_models/adaface_ir101_ms1mv3.ckpt"
+  - "/path/to/pretrained_models/adaface_ir101_ms1mv3.ckpt"
   - "ir_101"
 
 ada_ir50_webface4m:
-  - "/idiap/temp/prahimi/exps/proj/pretrained_models/adaface_ir50_webface4m.ckpt"
+  - "/path/to/pretrained_models/adaface_ir50_webface4m.ckpt"
   - "ir_50"

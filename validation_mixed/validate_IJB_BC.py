@@ -243,7 +243,8 @@ def load_pretrained_model(model_name='ir50', dvpf_kwargs={}):
                     return (output, faceness)
 
             import sys 
-            sys.path.append("/remote/idiap.svm/temp.biometric01/prahimi/exps/proj")
+            import os
+            sys.path.append(os.getenv("DVPF_BASE_PATH"))
             # Populate from settings 
             from dvpf import get_model
             dvpf_model = get_model(dvpf_kwargs)

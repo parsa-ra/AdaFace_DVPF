@@ -1,7 +1,7 @@
 
 # DVPF paper
 
-We adapted some of the evaluation codes of this repostiroy in the `validation_mixed` folder, so we could pipe our DVPF model on top of the calculated embeddings for reprodocibility purposes.
+We adapted some of the evaluation codes of this repository in the `validation_mixed` folder, so we could pipe our DVPF model on top of the calculated embeddings for reproducibility purposes.
 
 ```bash
 cd validatoin_mixed

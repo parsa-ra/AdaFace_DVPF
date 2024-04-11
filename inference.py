@@ -3,12 +3,13 @@ import torch
 import os
 from face_alignment import align
 import numpy as np
+import os
 
-
+adaface_models_base_path = os.getenv("DVPF_PRETRAINED_FR_BASE_PATH")
 adaface_models = {
-    'ir_18': "/remote/idiap.svm/temp.biometric01/prahimi/exps/proj/pretrained_models/adaface_ir18_webface4m.ckpt",
-    'ir_50': "/remote/idiap.svm/temp.biometric01/prahimi/exps/proj/pretrained_models/adaface_ir50_webface4m.ckpt",
-    'ir_101': "/remote/idiap.svm/temp.biometric01/prahimi/exps/proj/pretrained_models/adaface_ir101_webface12m.ckpt"
+    'ir_18': f"{adaface_models_base_path}/adaface_ir18_webface4m.ckpt",
+    'ir_50': f"{adaface_models_base_path}/adaface_ir50_webface4m.ckpt",
+    'ir_101': f"{adaface_models_base_path}/adaface_ir101_webface12m.ckpt"
 }
 
 def load_pretrained_model(architecture='ir_50'):
